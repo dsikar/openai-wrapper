@@ -202,6 +202,6 @@ for key, value in model_dict.items():
 #         return "Response to query: " + query
 
 # # Example usage:
-# openai_wrapper = OpenAIWrapper('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')
+# openai_wrapper = OpenAIWrapper('sk-....')
 # response = openai_wrapper.query("What is the capital of France?")
 # print(response)
