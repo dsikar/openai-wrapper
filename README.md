@@ -262,12 +262,13 @@ For more details, you can refer to the provided excerpt from the abstract and in
 We are interested in 3, objects
 * 29 A copy of the abstract and part of the introduction
 * 37 An actual copy of the abstract and part of the introduction
-* 41 The actual response 
+* 41 The actual response
+    
 These dictionary items can be accessed with the expressions:
 ```
-29. model_dict['data'][1]['content'][0]['text']['annotations'][0]['file_citation']['quote']
-37. model_dict['data'][1]['content'][0]['text']['annotations'][1]['file_citation']['quote']
-41. model_dict['data'][1]['content'][0]['text']['value']
+1.  model_dict['data'][1]['content'][0]['text']['annotations'][0]['file_citation']['quote']
+2.  model_dict['data'][1]['content'][0]['text']['annotations'][1]['file_citation']['quote']
+3.  model_dict['data'][1]['content'][0]['text']['value']
 ```
 Note, the length of object 29. is 1645 and the length of object 37. is 4360 characters. These lengths may be indicative of the amount of text (window context) the assistant is constrained to.
 
