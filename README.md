@@ -260,9 +260,9 @@ For more details, you can refer to the provided excerpt from the abstract and in
 ```
 ### Objects of interest
 We are interested in 3, objects
-* 29. A copy of the abstract and part of the introduction
-* 37. An actual copy of the abstract and part of the introduction
-* 41. The actual response 
+* 29 A copy of the abstract and part of the introduction
+* 37 An actual copy of the abstract and part of the introduction
+* 41 The actual response 
 These dictionary items can be accessed with the expressions:
 ```
 29. model_dict['data'][1]['content'][0]['text']['annotations'][0]['file_citation']['quote']
