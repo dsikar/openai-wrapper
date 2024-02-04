@@ -1,5 +1,34 @@
 # openai-wrapper  
 Python wrapper for the OpenAI API.
+ 
+We inspect the assistant reply, a collection of key-value pairs held in a Python dictionary, with nested lists and dictionaries containing data and metadata, to locate the query reply. 
+We ennumerate each object, be it a list element or a dictionary key, first listing only the names, then also including the values, to access the reply accordingly.
+
+## Objects of interest
+We are interested in 3 objects in the dictionary
+* 29 - A copy of the abstract and part of the introduction
+* 37 - An actual copy of the abstract and part of the introduction
+* 41 - The actual response
+    
+The dictionary items listed above can be accessed with the expressions:
+```
+1.  model_dict['data'][1]['content'][0]['text']['annotations'][0]['file_citation']['quote']
+2.  model_dict['data'][1]['content'][0]['text']['annotations'][1]['file_citation']['quote']
+3.  model_dict['data'][1]['content'][0]['text']['value']
+```
+Note, the length of object 29. is 1645 and the length of object 37. is 4360 characters. These lengths may be indicative of the amount of text (context window) the assistant is constrained to.
+
+```
+# print objects of interest
+print(model_dict['data'][1]['content'][0]['text']['annotations'][0]['file_citation']['quote']) # 29. 
+print(model_dict['data'][1]['content'][0]['text']['annotations'][1]['file_citation']['quote']) # 37. 
+print(model_dict['data'][1]['content'][0]['text']['value']) # 41. 
+
+# lengths
+print(len(model_dict['data'][1]['content'][0]['text']['annotations'][0]['file_citation']['quote'])) # 1645
+print(len(model_dict['data'][1]['content'][0]['text']['annotations'][1]['file_citation']['quote'])) # 4360
+print(len(model_dict['data'][1]['content'][0]['text']['value'])) # 1553
+```
 
 ## Assistant reply
 
@@ -258,28 +287,4 @@ For more details, you can refer to the provided excerpt from the abstract and in
 52. Key: last_id, Value Type: <class 'str'>, Value: msg_ARNRFl1ArtLRNfcD5N9Gug32
 53. Key: has_more, Value Type: <class 'bool'>, Value: False
 ```
-### Objects of interest
-We are interested in 3, objects
-* 29 A copy of the abstract and part of the introduction
-* 37 An actual copy of the abstract and part of the introduction
-* 41 The actual response
-    
-The dictionary items listed above can be accessed with the expressions:
-```
-1.  model_dict['data'][1]['content'][0]['text']['annotations'][0]['file_citation']['quote']
-2.  model_dict['data'][1]['content'][0]['text']['annotations'][1]['file_citation']['quote']
-3.  model_dict['data'][1]['content'][0]['text']['value']
-```
-Note, the length of object 29. is 1645 and the length of object 37. is 4360 characters. These lengths may be indicative of the amount of text (window context) the assistant is constrained to.
 
-```
-# print objects of interest
-print(model_dict['data'][1]['content'][0]['text']['annotations'][0]['file_citation']['quote']) # 29. 
-print(model_dict['data'][1]['content'][0]['text']['annotations'][1]['file_citation']['quote']) # 37. 
-print(model_dict['data'][1]['content'][0]['text']['value']) # 41. 
-
-# lengths
-print(len(model_dict['data'][1]['content'][0]['text']['annotations'][0]['file_citation']['quote'])) # 1645
-print(len(model_dict['data'][1]['content'][0]['text']['annotations'][1]['file_citation']['quote'])) # 4360
-print(len(model_dict['data'][1]['content'][0]['text']['value'])) # 1553
-```
