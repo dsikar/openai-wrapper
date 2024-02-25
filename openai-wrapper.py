@@ -4,6 +4,8 @@ import openai
 from openai import OpenAI
 import time
 
+client = OpenAI()
+
 # helper functions
 
 def show_json(obj):
@@ -48,6 +50,8 @@ def pretty_print(messages):
         print(f"{m.role}: {m.content[0].text.value}")
     print()
 
+# see https://platform.openai.com/docs/assistants/how-it-works
+#     https://platform.openai.com/docs/api-reference/assistants
 def get_assistant_response(assistant_id, assistant_query):
     """
     Get a response from the assistant
@@ -91,6 +95,73 @@ def create_assistant(filepath):
     )
     return assistant1, file1.id
 
+def create_assistant_with_multiple_files(filepaths):
+    # Initialize an empty list to store file objects
+    file_objects = []
+    
+    # Loop through each file path in the input list
+    for filepath in filepaths:
+        # Create a file object for each file and append it to the file_objects list
+        file_object = client.files.create(
+            file=open(filepath, "rb"),
+            purpose='assistants'
+        )
+        file_objects.append(file_object)
+        time.sleep(5)
+
+    # Extract the IDs from each file object and store them in a list
+    file_ids = [file_object.id for file_object in file_objects]
+    
+    # Create the assistant using the list of file IDs
+    assistant1 = client.beta.assistants.create(
+        instructions="You are a recruitment consultant that will analyze a number of job offers to evaluate a market.",
+        model="gpt-4", # Adjust the model as needed
+        tools=[{"type": "retrieval"}],
+        file_ids=file_ids
+    )
+    
+    # Return the assistant and the list of file IDs
+    return assistant1, file_ids
+
+def create_bizz_dev_assistant(filepath):
+    file1 = client.files.create(
+        file=open(filepath, "rb"),
+        purpose='assistants'
+    )
+    assistant1 = client.beta.assistants.create(
+        instructions="You are a literature review assistant. Use the paper to answer questions for example about the abstract, \
+            main contributions and future work.",
+        model="gpt-3.5-turbo-1106", # note original gpt-4-1106-preview not available
+        tools=[{"type": "retrieval"}],
+        file_ids=[file1.id]
+    )
+    return assistant1, file1.id
+
+import os
+
+def get_files_from_path(directory_path, file_extensions):
+    """
+    Searches for files with specified extensions within a given directory and returns their full paths.
+
+    Parameters:
+    - directory_path (str): The path of the directory to search in.
+    - file_extensions (list of str): A list of file extensions to include in the search (e.g., ['.pdf', '.doc']).
+
+    Returns:
+    - list of str: A list containing the full paths to the files matching the specified extensions.
+    """
+    matching_files = []
+    # Walk through the directory
+    for root, dirs, files in os.walk(directory_path):
+        for file in files:
+            # Check if the file ends with one of the specified extensions
+            if any(file.endswith(ext) for ext in file_extensions):
+                # If so, append the full path of the file to the list
+                full_path = os.path.join(root, file)
+                matching_files.append(full_path)
+                
+    return matching_files
+
 def delete_file_id(file_id):
     # does not seem to work
     client.files.delete(file_id)
@@ -106,46 +177,94 @@ def delete_all_file_ids():
         print('Deleting file id:', ids[i])
         client.files.delete(ids[i])
 
-# boilerplate code
-env_var = os.getenv('OPENAI_API_KEY')
-print(env_var)
-client = OpenAI()
-models = client.models.list()
-print(models)
+def list_assistants(ilimit=50):
+    from openai import OpenAI
+    client = OpenAI()
+    my_assistants = client.beta.assistants.list(
+        order="desc",
+        limit=str(ilimit),
+    )
+    return my_assistants.data
+
+def retrieve_ids_from_string(s):
+    """
+    Extracts all unique IDs from a given string where IDs follow the pattern id='asst_XXXX'.
+    
+    Parameters:
+    - s (str): The string to search for IDs. Note, lists must be converted to strings before passing them to this function.
+    
+    Returns:
+    - list of str: A list of unique IDs found in the string, including the 'asst_' prefix.
+
+    # Example usage:
+    input_string = "Assistant(id='asst_6YSBlYBK2UnmODX5XTMaK1sf', Assistant(id='asst_tS7EkawleSgbWlTwwf2Vu9uF', ...)"
+    ids = retrieve_ids_from_string(input_string)
+    print(ids)
+    """
+    import re
+    # Define the regular expression pattern for matching the IDs
+    # This pattern directly captures the entire ID, including the 'asst_' part.
+    pattern = r"id='(asst_[^']*)'"
+    
+    # Find all matches of the pattern in the input string
+    matches = re.findall(pattern, s)
+    
+    # Return the list of unique IDs (if any duplicates are found, they are removed)
+    return list(set(matches))
+
+def delete_assistant(assistant_id):
+    response = client.beta.assistants.delete(assistant_id)
+    print(response)
+
+def delete_all_assistants():
+    lass = list_assistants()
+    assistants = retrieve_ids_from_string(str(lass))
+    for assistant in assistants:
+        print('Deleting assistant:', assistant)
+
+def show_models():
+    models = client.models.list()
+    print(models)
+
+# # Example usage
+directory_path = '/home/daniel/Downloads/tmp/previous_project'
+# file_extensions = ['.pdf', '.doc']
+file_extensions = ['.pdf']
+file_paths = get_files_from_path(directory_path, file_extensions)
+print(file_paths)
+bizz_dev_assist, biz_dev_file_ids = create_assistant_with_multiple_files(file_paths)
+print(biz_dev_file_ids)
+# # this should be in a loop on the client side, but for now we will just do it once
+# filepath = find_file_path('2210.09643.pdf', '/home/daniel/git/icml2023/')
+# assistant1, file_id = create_assistant(filepath)
+
+# print(file_id)
+
+# client.files.list()
+
+# show_json(assistant1)
+
+# assistant_id = assistant1.id
+# assistant_query = "Name the file you are able to assist me with, list the sections and summarise the content"
+# assistant_reply = get_assistant_response(assistant_id, assistant_query)
+# model_dict = assistant_reply.model_dump()
 
 
-# this should be in a loop on the client side, but for now we will just do it once
-filepath = find_file_path('2210.09643.pdf', '/home/daniel/git/icml2023/')
-assistant1, file_id = create_assistant(filepath)
+# for key, value in model_dict.items():
+#     print(f"Key: {key}, Data Type: {type(value)}")
 
-
-print(file_id)
-
-client.files.list()
-
-show_json(assistant1)
-
-assistant_id = assistant1.id
-assistant_query = "Name the file you are able to assist me with, list the sections and summarise the content"
-assistant_reply = get_assistant_response(assistant_id, assistant_query)
-model_dict = assistant_reply.model_dump()
-
-
-for key, value in model_dict.items():
-    print(f"Key: {key}, Data Type: {type(value)}")
-
-for key, value in model_dict.items():
-    print(f"Key: {key}, Value: ", end="")
-    if isinstance(value, list):
-        print()
-        for i, item in enumerate(value):
-            if isinstance(item, dict):
-                for sub_key, sub_value in item.items():
-                    print(f"\tSub-key: {sub_key}, Sub-value: {sub_value}")
-            else:
-                print(f"  Item {i}: {item}")
-    else:
-        print(value)
+# for key, value in model_dict.items():
+#     print(f"Key: {key}, Value: ", end="")
+#     if isinstance(value, list):
+#         print()
+#         for i, item in enumerate(value):
+#             if isinstance(item, dict):
+#                 for sub_key, sub_value in item.items():
+#                     print(f"\tSub-key: {sub_key}, Sub-value: {sub_value}")
+#             else:
+#                 print(f"  Item {i}: {item}")
+#     else:
+#         print(value)
 
 # output
 # Note, we need to get to subkey value 'quote'
